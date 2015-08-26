@@ -41,7 +41,9 @@ import com.nostra13.universalimageloader.utils.MemoryCacheUtils;
 
 /**
  * Singletone for image loading and displaying at {@link ImageView ImageViews}<br />
- * <b>NOTE:</b> {@link #init(ImageLoaderConfiguration)} method must be called before any other method.
+ * <b>NOTE:</b> {@link #init(ImageLoaderConfiguration)} method must be called before any other method.<br />
+ *
+ * 图片加载器，对外的主API，采取了单例模式，用于图片的加载和显示
  *
  * @author Sergey Tarasevich (nostra13[at]gmail[dot]com)
  * @since 1.0.0
@@ -84,8 +86,8 @@ public class ImageLoader {
 	/**
 	 * Initializes ImageLoader instance with configuration.<br />
 	 * If configurations was set before ( {@link #isInited()} == true) then this method does nothing.<br />
-	 * To force initialization with new configuration you should {@linkplain #destroy() destroy ImageLoader} at first.
-	 *
+	 * To force initialization with new configuration you should {@linkplain #destroy() destroy ImageLoader} at first.<br />
+	 * 通过ImageLoaderConfiguration初始化ImageLoader<br />
 	 * @param configuration {@linkplain ImageLoaderConfiguration ImageLoader configuration}
 	 * @throws IllegalArgumentException if <b>configuration</b> parameter is null
 	 */
@@ -230,9 +232,12 @@ public class ImageLoader {
 	 *                         this listener work.
 	 * @throws IllegalStateException    if {@link #init(ImageLoaderConfiguration)} method wasn't called before
 	 * @throws IllegalArgumentException if passed <b>imageAware</b> is null
+	 *
+	 * 基于线程池实现图片显示，考虑了cpu多核优化的情况
 	 */
 	public void displayImage(String uri, ImageAware imageAware, DisplayImageOptions options,
 			ImageSize targetSize, ImageLoadingListener listener, ImageLoadingProgressListener progressListener) {
+		//入参判断及初始化
 		checkConfiguration();
 		if (imageAware == null) {
 			throw new IllegalArgumentException(ERROR_WRONG_ARGUMENTS);
@@ -244,6 +249,7 @@ public class ImageLoader {
 			options = configuration.defaultDisplayImageOptions;
 		}
 
+		//uri为空的处理
 		if (TextUtils.isEmpty(uri)) {
 			engine.cancelDisplayTaskFor(imageAware);
 			listener.onLoadingStarted(uri, imageAware.getWrappedView());
@@ -264,39 +270,39 @@ public class ImageLoader {
 
 		listener.onLoadingStarted(uri, imageAware.getWrappedView());
 
-		Bitmap bmp = configuration.memoryCache.get(memoryCacheKey);
-		if (bmp != null && !bmp.isRecycled()) {
+		Bitmap bmp = configuration.memoryCache.get(memoryCacheKey);  //从内存缓存中取出图片
+		if (bmp != null && !bmp.isRecycled()) {  //图片不为空，且没有被回收，直接使用内存数据
 			L.d(LOG_LOAD_IMAGE_FROM_MEMORY_CACHE, memoryCacheKey);
 
-			if (options.shouldPostProcess()) {
+			if (options.shouldPostProcess()) {  //需要后续处理
 				ImageLoadingInfo imageLoadingInfo = new ImageLoadingInfo(uri, imageAware, targetSize, memoryCacheKey,
 						options, listener, progressListener, engine.getLockForUri(uri));
 				ProcessAndDisplayImageTask displayTask = new ProcessAndDisplayImageTask(engine, bmp, imageLoadingInfo,
-						defineHandler(options));
-				if (options.isSyncLoading()) {
-					displayTask.run();
+						defineHandler(options));   //新建ProcessAndDisplayImageTask任务
+				if (options.isSyncLoading()) {  //是否同步加载
+					displayTask.run();  //同步加载，任务直接运行
 				} else {
-					engine.submit(displayTask);
+					engine.submit(displayTask);  //不是同步加载，任务提交到engine中
 				}
-			} else {
-				options.getDisplayer().display(bmp, imageAware, LoadedFrom.MEMORY_CACHE);
-				listener.onLoadingComplete(uri, imageAware.getWrappedView(), bmp);
+			} else {  // 不需要后续处理
+				options.getDisplayer().display(bmp, imageAware, LoadedFrom.MEMORY_CACHE);  // BitmapDisplayer.display()
+				listener.onLoadingComplete(uri, imageAware.getWrappedView(), bmp);    //回调onLoadingComplete接口
 			}
-		} else {
+		} else { //缓存中获取的图片为空，需要去网络下载
 			if (options.shouldShowImageOnLoading()) {
 				imageAware.setImageDrawable(options.getImageOnLoading(configuration.resources));
 			} else if (options.isResetViewBeforeLoading()) {
 				imageAware.setImageDrawable(null);
 			}
-
+			//新建LoadAndDisplayImageTask
 			ImageLoadingInfo imageLoadingInfo = new ImageLoadingInfo(uri, imageAware, targetSize, memoryCacheKey,
 					options, listener, progressListener, engine.getLockForUri(uri));
 			LoadAndDisplayImageTask displayTask = new LoadAndDisplayImageTask(engine, imageLoadingInfo,
 					defineHandler(options));
 			if (options.isSyncLoading()) {
-				displayTask.run();
+				displayTask.run();  //同步，任务直接运行
 			} else {
-				engine.submit(displayTask);
+				engine.submit(displayTask);  //不同步，任务提交engine中
 			}
 		}
 	}
@@ -604,8 +610,8 @@ public class ImageLoader {
 	}
 
 	/**
-	 * Checks if ImageLoader's configuration was initialized
-	 *
+	 * Checks if ImageLoader's configuration was initialized <br />
+	 * 查看是否初始化configration
 	 * @throws IllegalStateException if configuration wasn't initialized
 	 */
 	private void checkConfiguration() {

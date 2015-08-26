@@ -46,33 +46,91 @@ import java.util.concurrent.Executor;
  * @see ImageDownloader
  * @see FileNameGenerator
  * @since 1.0.0
+ *
+ * ImageLoader的配置信息，包括图片最大尺寸、线程池、缓存、下载器、解码器等
  */
 public final class ImageLoaderConfiguration {
 
+	/**
+	 * 程序本地资源访问器，用于加载DisplayImageOptions中设置的一些App中的图片资源
+	 */
 	final Resources resources;
 
+	/**
+	 * 内存缓存图片最大宽度
+	 */
 	final int maxImageWidthForMemoryCache;
+	/**
+	 * 内存缓存图片最大高度
+	 */
 	final int maxImageHeightForMemoryCache;
+	/**
+	 * 磁盘缓存图片最大宽度
+	 */
 	final int maxImageWidthForDiskCache;
+	/**
+	 * 磁盘缓存图片最大高度
+	 */
 	final int maxImageHeightForDiskCache;
+	/**
+	 * 图片处理器，用于处理从磁盘缓存中读取到的图片
+	 */
 	final BitmapProcessor processorForDiskCache;
-
+	/**
+	 * ImageLoaderEngine中用于从源（网络等）获取图片任务的Executor
+	 */
 	final Executor taskExecutor;
+	/**
+	 * ImageLoaderEngine中用于从缓存获取图片任务的Executor
+	 */
 	final Executor taskExecutorForCachedImages;
+	/**
+	 * 用户是否自定义了上面的taskExecutor
+	 */
 	final boolean customExecutor;
+	/**
+	 * 用户是否自定义了上面的taskExecutorForCachedImages
+	 */
 	final boolean customExecutorForCachedImages;
-
+	/**
+	 * 上面两个默认线程池的核心池大小，即最大并发数
+	 */
 	final int threadPoolSize;
+	/**
+	 * 上面两个默认线程池的优先级
+	 */
 	final int threadPriority;
+	/**
+	 * 上面两个默认线程池的线程队列类型。目前只有FIFO和LIFO两种可供选择
+	 */
 	final QueueProcessingType tasksProcessingType;
-
+	/**
+	 * 图片内存缓存
+	 */
 	final MemoryCache memoryCache;
+	/**
+	 * 图片磁盘缓存，一般放在SD卡上
+	 */
 	final DiskCache diskCache;
+	/**
+	 * 图片下载器
+	 */
 	final ImageDownloader downloader;
+	/**
+	 * 图片解码器，内部可使用我们常用的BitmapFactory.decode(...)将图片资源解码成Bitmap对象
+	 */
 	final ImageDecoder decoder;
+	/**
+	 * 图片显示的配置项。比如加载前、加载中、加载失败应该显示的占位图片。图片是否需要在磁盘中缓存，是否需要在内存中缓存
+	 */
 	final DisplayImageOptions defaultDisplayImageOptions;
-
+	/**
+	 * 不允许访问网络的图片下载器
+	 */
 	final ImageDownloader networkDeniedDownloader;
+	/**
+	 * 慢网络情况下的图片下载器
+	 */
 	final ImageDownloader slowNetworkDownloader;
 
 	private ImageLoaderConfiguration(final Builder builder) {
